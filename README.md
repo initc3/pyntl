@@ -3,6 +3,30 @@ The code in this directory exposes a Python interface
 for several NTL functions, and other C++ code using
 NTL.
 
+## Installation
+For now, the `NTL` development header files must be available on the operating system
+where `pyntl` is installed.
+
+For Debian/Ubuntu systems `libntl-dev` can be installed:
+
+```shell
+sudo apt-get update
+sudo apt-get install --yes libntl-dev
+```
+
+To install `pyntl` from its GitHub repository:
+
+```shell
+pip install git+https://github.com/initc3/pyntl.git
+```
+
+Check the installation:
+
+```shell
+python -c 'import ntl; print(ntl.version)'
+```
+
+
 # Development
 
 ## Modifying code
