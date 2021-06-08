@@ -28,6 +28,7 @@ COPY .flake8 pytest.ini ./
 FROM base as dist
 
 RUN pip install build
+RUN make clean && python -m build
 
 FROM scratch AS export-stage
 COPY --from=dist /usr/src/pyntl/dist /
