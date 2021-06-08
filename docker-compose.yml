@@ -6,6 +6,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: dev
     env_file: .env
     volumes:
       #- ./docs:/usr/src/pyntl/docs
@@ -30,6 +31,22 @@ services:
       - ./.flake8:/usr/src/pyntl/.flake8
       - ./Makefile:/usr/src/pyntl/Makefile
       - ./pytest.ini:/usr/src/pyntl/pytest.ini
+      - ./pyproject.toml:/usr/src/pyntl/pyproject.toml
       - ./setup.cfg:/usr/src/pyntl/setup.cfg
       - ./setup.py:/usr/src/pyntl/setup.py
     command: pytest -v --cov=src
+  pyntl-dist:
+    image: pyntl-dist
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dist
+    env_file: .env
+    volumes:
+      - ./src:/usr/src/pyntl/src
+      - ./Makefile:/usr/src/pyntl/Makefile
+      - ./pyproject.toml:/usr/src/pyntl/pyproject.toml
+      - ./setup.cfg:/usr/src/pyntl/setup.cfg
+      - ./setup.py:/usr/src/pyntl/setup.py
+      - ./dist:/usr/src/pyntl/dist
+    command: python -m build
