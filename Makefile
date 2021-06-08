@@ -51,7 +51,7 @@ clean-test: ## remove test and coverage artifacts
 	rm -f tests/.pytest.log
 
 lint: ## check style with flake8
-	flake8 honeybadgermpc tests
+	flake8 -v src tests
 
 test: ## run tests quickly with the default Python
 	pytest -v
@@ -60,7 +60,7 @@ test-all: ## run tests on every Python version with tox
 	tox
 
 coverage: ## check code coverage quickly with the default Python
-	pytest -v -n auto --cov=honeybadgermpc --cov-report term --cov-report html
+	pytest -v -n auto --cov=src --cov-report term --cov-report html
 	$(BROWSER) htmlcov/index.html
 
 docs-local: ## generate Sphinx HTML documentation, including API docs
@@ -100,14 +100,8 @@ release: clean ## package and upload a release
 	twine upload dist/*
 
 dist: clean ## builds source and wheel package
-	python3.7 setup.py sdist bdist_wheel
+	python setup.py sdist bdist_wheel
 	ls -l dist
 
 install: clean ## install the package to the active Python's site-packages
 	python setup.py install
-
-ipc:
-	sh scripts/launch_ipc.sh
-
-ipc-containers:
-	sh scripts/launch_ipc_containers.sh

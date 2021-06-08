@@ -1,13 +1,8 @@
-import logging
 import operator
 from functools import reduce
 from itertools import zip_longest
 
-from honeybadgermpc.ntl import fft as fft_cpp
-from honeybadgermpc.ntl import fft_interpolate as fft_interpolate_cpp
-
-from .betterpairing import ZR
-from .elliptic_curve import Subgroup
+# from .betterpairing import ZR
 from .field import GF, GFElement
 
 
@@ -24,8 +19,9 @@ _poly_cache = {}
 
 
 def polynomials_over(field):
-    assert type(field) is GF or field == ZR
-    field_type = GFElement if type(field) is GF else ZR
+    # assert type(field) is GF or field == ZR
+    assert isinstance(field, GF)
+    field_type = GFElement
     if field in _poly_cache:
         return _poly_cache[field]
 
@@ -157,25 +153,25 @@ def polynomials_over(field):
 
             return xs2
 
-        @classmethod
-        def interp_extrap_cpp(cls, xs, omega):
-            """
-            Interpolates the polynomial based on the even points omega^2i
-            then evaluates at all points omega^i using C++ FFT routines.
-            """
-            n = len(xs)
-            assert n & (n - 1) == 0, "n must be power of 2"
-            assert pow(omega, 2 * n) == 1, "omega must be 2n'th root of unity"
-            assert pow(omega, n) != 1, "omega must be primitive 2n'th root of unity"
-            p = omega.modulus
+        # @classmethod
+        # def interp_extrap_cpp(cls, xs, omega):
+        #    """
+        #    Interpolates the polynomial based on the even points omega^2i
+        #    then evaluates at all points omega^i using C++ FFT routines.
+        #    """
+        #    n = len(xs)
+        #    assert n & (n - 1) == 0, "n must be power of 2"
+        #    assert pow(omega, 2 * n) == 1, "omega must be 2n'th root of unity"
+        #    assert pow(omega, n) != 1, "omega must be primitive 2n'th root of unity"
+        #    p = omega.modulus
 
-            # Interpolate the polynomial up to degree n
-            poly = fft_interpolate_cpp(list(range(n)), xs, (pow(omega, 2)).value, p, n)
+        #    # Interpolate the polynomial up to degree n
+        #    poly = fft_interpolate_cpp(list(range(n)), xs, (pow(omega, 2)).value, p, n)
 
-            # Evaluate the polynomial
-            xs2 = fft_cpp(poly, omega.value, p, 2 * n)
+        #    # Evaluate the polynomial
+        #    xs2 = fft_cpp(poly, omega.value, p, 2 * n)
 
-            return xs2
+        #    return xs2
 
         # the valuation only gives 0 to the zero polynomial, i.e. 1+degree
         def __abs__(self):
@@ -423,35 +419,37 @@ class EvalPoint(object):
         return self.field(0)
 
 
-if __name__ == "__main__":
-    field = GF(Subgroup.BLS12_381)
-    Poly = polynomials_over(field)
-    poly = Poly.random(degree=7)
-    poly = Poly([1, 5, 3, 15, 0, 3])
-    n = 2 ** 3
-    omega = get_omega(field, n, seed=1)
-    omega2 = get_omega(field, n, seed=4)
-    # FFT
-    # x = fft(poly, omega=omega, n=n, test=True, enable_profiling=True)
-    x = poly.evaluate_fft(omega, n)
-    # IFFT
-    x2 = [b / n for b in fft_helper(x, 1 / omega, field)]
-    poly2 = Poly.interpolate_fft(x2, omega)
-    logging.info(poly2)
-
-    logging.info(f"omega1: {omega ** (n//2)}")
-    logging.info(f"omega2: {omega2 ** (n//2)}")
-
-    logging.info("eval:")
-    omega = get_omega(field, 2 * n)
-    for i in range(len(x)):
-        logging.info(f"{omega**(2*i)} {x[i]}")
-    logging.info("interp_extrap:")
-    x3 = Poly.interp_extrap(x, omega)
-    for i in range(len(x3)):
-        logging.info(f"{omega**i} {x3[i]}")
-
-    logging.info("How many omegas are there?")
-    for _ in range(10):
-        omega = get_omega(field, 2 ** 20)
-        logging.info(f"{omega} {omega**(2**17)}")
+# if __name__ == "__main__":
+#    import logging
+#    from .elliptic_curve import Subgroup
+#    field = GF(Subgroup.BLS12_381)
+#    Poly = polynomials_over(field)
+#    poly = Poly.random(degree=7)
+#    poly = Poly([1, 5, 3, 15, 0, 3])
+#    n = 2 ** 3
+#    omega = get_omega(field, n, seed=1)
+#    omega2 = get_omega(field, n, seed=4)
+#    # FFT
+#    # x = fft(poly, omega=omega, n=n, test=True, enable_profiling=True)
+#    x = poly.evaluate_fft(omega, n)
+#    # IFFT
+#    x2 = [b / n for b in fft_helper(x, 1 / omega, field)]
+#    poly2 = Poly.interpolate_fft(x2, omega)
+#    logging.info(poly2)
+#
+#    logging.info(f"omega1: {omega ** (n//2)}")
+#    logging.info(f"omega2: {omega2 ** (n//2)}")
+#
+#    logging.info("eval:")
+#    omega = get_omega(field, 2 * n)
+#    for i in range(len(x)):
+#        logging.info(f"{omega**(2*i)} {x[i]}")
+#    logging.info("interp_extrap:")
+#    x3 = Poly.interp_extrap(x, omega)
+#    for i in range(len(x3)):
+#        logging.info(f"{omega**i} {x3[i]}")
+#
+#    logging.info("How many omegas are there?")
+#    for _ in range(10):
+#        omega = get_omega(field, 2 ** 20)
+#        logging.info(f"{omega} {omega**(2**17)}")

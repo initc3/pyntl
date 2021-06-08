@@ -1,6 +1,6 @@
 import random
 
-from honeybadgermpc.ntl import (
+from ntl import (
     evaluate,
     fft,
     fft_batch_evaluate,

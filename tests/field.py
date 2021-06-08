@@ -22,7 +22,7 @@
 # License along with VIFF. If not, see <http://www.gnu.org/licenses/>.
 from random import Random
 
-from gmpy2 import is_prime, mpz
+# from gmpy2 import is_prime, mpz
 
 
 class FieldsNotIdentical(Exception):
@@ -50,8 +50,8 @@ class GF(object):
         return GF._field_cache.setdefault(modulus, super(GF, cls).__new__(cls))
 
     def __init__(self, modulus):
-        if not is_prime(mpz(modulus)):
-            raise ValueError(f"{modulus} is not a prime")
+        # if not is_prime(mpz(modulus)):
+        #    raise ValueError(f"{modulus} is not a prime")
 
         self.modulus = modulus
 

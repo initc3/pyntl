@@ -1,33 +1,30 @@
 # Python-NTL interface
-
-The code in this directory exposes an python interface
+The code in this directory exposes a Python interface
 for several NTL functions, and other C++ code using
 NTL.
 
-# Modifying code
+# Development
 
-Currently, this directory is not mounted when you run
-`docker-compose ...`. In order to mount it, please remove
-or comment out this line `- /usr/src/HoneyBadgerMPC/honeybadgermpc/ntl`
- and then start the container again.
-
-
-# Building code
-
-If you go through the instructions above, you will find that you might
-need to rebuild all the Cython code. This can be done by running the
-following command from `/usr/src/HoneyBadgerMPC`
+## Modifying code
+The provided `Dockerfile` installs the Python package in development/editable mode.
+When working with docker-comopse, the source code under [src/ntl](./src/ntl) is
+mounted in the containter.
 
 
-```python setup.py build_ext --inplace```
+## Building code
+The rebuild the `.so` and `.cpp` files, from the root of the project, where `setup.py`
+is located:
 
+
+```shell
+python setup.py build_ext --inplace
+```
 
 The same command can be used to rebuild the code if you
 modify any of the Cython node. Note that you *must* rebuild the code
 to observe any changes during execution.
 
 # Writing Parallel Code
-
 Take a look at NTL documentation and see which operations are already
 parallelized. In general, it might be better to use these directly
 whenever possible.

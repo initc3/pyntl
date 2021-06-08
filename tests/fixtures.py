@@ -1,20 +1,16 @@
-import asyncio
-import random
-from os import makedirs
-from tempfile import mkdtemp
-
 from pytest import fixture
-
-from honeybadgermpc.mpc import TaskProgramRunner
-from honeybadgermpc.router import SimpleRouter
 
 
 @fixture
-def galois_field():
-    from honeybadgermpc.field import GF
-    from honeybadgermpc.elliptic_curve import Subgroup
+def bls12_381_r():
+    return 0x73EDA753299D7D483339D80809A1D80553BDA402FFFE5BFEFFFFFFFF00000001
 
-    return GF(Subgroup.BLS12_381)
+
+@fixture
+def galois_field(bls12_381_r):
+    from .field import GF as GaloisField
+
+    return GaloisField(bls12_381_r)
 
 
 @fixture
@@ -59,163 +55,6 @@ def galois_field_roots(galois_field):
 
 @fixture
 def polynomial(galois_field):
-    from honeybadgermpc.polynomial import polynomials_over
+    from .polynomial import polynomials_over
 
     return polynomials_over(galois_field)
-
-
-@fixture
-def rust_field():
-    from honeybadgermpc.betterpairing import ZR
-
-    return ZR
-
-
-@fixture
-def rust_polynomial(rust_field):
-    from honeybadgermpc.polynomial import polynomials_over
-
-    return polynomials_over(rust_field)
-
-
-@fixture(params=(1,))
-def triples_polys(request, triples_fields, polynomial):
-    t = request.param
-    return [
-        polynomial.random(t, field) for triple in triples_fields for field in triple
-    ]
-
-
-class TestPreProcessing:
-    """ This class, when initialized, creates a temporary data directory.
-    It then creates a PreProcessedElements object using that directory,
-    and sets it as the singleton for the testing field.
-    Thus, as the fixture has autouse=True, anytime code calls PreProcessedElements(),
-    it will return this created object.
-    """
-
-    def __init__(self):
-        from honeybadgermpc.preprocessing import PreProcessedElements
-        from honeybadgermpc.preprocessing import PreProcessingConstants as Constants
-        from honeybadgermpc.progs.mixins.base import MixinBase
-
-        makedirs(Constants.SHARED_DATA_DIR.value, exist_ok=True)
-        self.test_data_dir = f"{mkdtemp(dir=Constants.SHARED_DATA_DIR.value)}/"
-        PreProcessedElements.DEFAULT_DIRECTORY = self.test_data_dir
-
-        PreProcessedElements.reset_cache()
-        self.elements = PreProcessedElements(data_directory=self.test_data_dir)
-        MixinBase.pp_elements = self.elements
-
-
-@fixture(scope="session", autouse=True)
-def test_preprocessing():
-    return TestPreProcessing()
-
-
-class TestRouter(SimpleRouter):
-    def __init__(self, num_parties, max_delay=0.005, seed=None):
-        super().__init__(num_parties)
-
-        self.rnd = random.Random(seed)
-        self.max_delay = max_delay
-
-    def send(self, player_id: int, dest_id: int, message: object):
-        """Overridden to introduce delays.
-        """
-        delay = self.rnd.random() * self.max_delay
-        asyncio.get_event_loop().call_later(
-            delay, super().send, player_id, dest_id, message
-        )
-
-
-@fixture
-def test_router():
-    def _test_router(n, maxdelay=0.005, seed=None):
-        """Builds a set of connected channels, with random delay
-        @return (receives, sends)
-        """
-        router = TestRouter(n, maxdelay, seed)
-        return router.sends, router.recvs, router.broadcasts
-
-    return _test_router
-
-
-def _preprocess(n, t, k, to_generate):
-    from honeybadgermpc.preprocessing import PreProcessedElements
-
-    pp_elements = PreProcessedElements()
-    for kind in to_generate:
-        if kind == "triples":
-            pp_elements.generate_triples(k, n, t)
-        elif kind == "cubes":
-            pp_elements.generate_cubes(k, n, t)
-        elif kind == "zeros":
-            pp_elements.generate_zeros(k, n, t)
-        elif kind == "rands":
-            pp_elements.generate_rands(k, n, t)
-        elif kind == "bits":
-            pp_elements.generate_bits(k, n, t)
-        elif kind == "one_minus_one":
-            pp_elements.generate_one_minus_ones(k, n, t)
-        elif kind == "double_shares":
-            pp_elements.generate_double_shares(k, n, t)
-        elif kind == "share_bits":
-            pp_elements.generate_share_bits(k, n, t)
-        else:
-            raise ValueError(f"{kind} must be manually preprocessed")
-
-
-def _build_config(mixins=None):
-    if mixins is None:
-        mixins = []
-
-    config = {}
-
-    for mixin in mixins:
-        if mixin.name in config:
-            raise ValueError(f"Multiple mixins with name {mixin.name} loaded!")
-
-        config[mixin.name] = mixin
-
-    return config
-
-
-@fixture
-def test_runner():
-    async def _test_runner(prog, n=4, t=1, to_generate=None, k=1000, mixins=None):
-        if to_generate is None:
-            to_generate = []
-        if mixins is None:
-            mixins = []
-
-        _preprocess(n, t, k, to_generate)
-
-        config = _build_config(mixins)
-        program_runner = TaskProgramRunner(n, t, config)
-        program_runner.add(prog)
-
-        return await program_runner.join()
-
-    return _test_runner
-
-
-@fixture
-def benchmark_runner(benchmark):
-    def _benchmark_runner(prog, n=4, t=1, to_generate=[], k=1000, mixins=[]):
-        _preprocess(n, t, k, to_generate)
-
-        config = _build_config(mixins)
-        program_runner = TaskProgramRunner(n, t, config)
-        loop = asyncio.get_event_loop()
-
-        def _setup():
-            program_runner.tasks.clear()
-            program_runner.add(prog)
-
-        def _work():
-            loop.run_until_complete(program_runner.join())
-
-        benchmark(_work, setup=_setup)
-
-    return _benchmark_runner
