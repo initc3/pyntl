@@ -1,4 +1,15 @@
-# Python-NTL interface
+# Experimental Python Bindings for NTL
+
+----- [**HERE BE DRAGONS**](https://en.wikipedia.org/wiki/Here_be_dragons) -----
+
+**ONLY meant for PROTOTYPING & EXPERIMENTAL purposes!**
+
+**NOT FOR PRODUCTION, NOT FOR BETA, NOT FOR ALPHA, ONLY for DEVELOPMENT!**
+
+**USE to EXPERIMENT, LEARN, and PROTOTYPE!**
+
+---- [**HERE BE DRAGONS**](https://en.wikipedia.org/wiki/Here_be_dragons) -----
+
 The code in this directory exposes a Python interface
 for several NTL functions, and other C++ code using
 NTL.
